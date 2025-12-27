@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include "selfclass/MultiLineDelegate.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class qMainWindow; }
@@ -19,6 +20,7 @@ struct DB_Table {
     int row; //行数
     int column; //列数
     QSqlTableModel *tablemodel;
+    MultiLineDelegate *m_delegate; // 自定义多行委托
     QTableView *tableview;
     QAction *copyAct;
 
@@ -56,6 +58,9 @@ private slots:
     void btn_import_slot();
     void checkbox_changed_slot();
     void query_slot();
+    void ModelDataChanged_slot();
+signals:
+    void signal_ModelChanged();
 
 private:
     QScrollArea *_scroll_area;

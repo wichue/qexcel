@@ -20,10 +20,12 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     main.cpp \
-    qmainwindow.cpp
+    qmainwindow.cpp \
+    selfclass/MultiLineDelegate.cpp
 
 HEADERS += \
-    qmainwindow.h
+    qmainwindow.h \
+    selfclass/MultiLineDelegate.h
 
 FORMS += \
     qmainwindow.ui

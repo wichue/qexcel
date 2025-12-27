@@ -96,7 +96,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     table.label->resize(300,LABEL_HIGH);
 
     table.tableview = new QTableView;
-    table.tableview->horizontalHeader()->setVisible(false);
+//    table.tableview->horizontalHeader()->setVisible(false);// 隐藏表头
     table.tableview->verticalHeader()->setDefaultSectionSize(COLUMN_HIGH);
     table.tableview->hide();
     table.tableview->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -125,6 +125,16 @@ void qMainWindow::addTable(QString tableName, int columnCount)
         table.tablemodel->fetchMore();
     }
     table.row = table.tablemodel->rowCount();
+
+    table.m_delegate = new MultiLineDelegate;
+    table.tableview->setItemDelegate(table.m_delegate);
+    table.tablemodel->setEditStrategy(QSqlTableModel::OnFieldChange);// 单元格失焦后立即写入库
+
+    // 内容改变时，单元格自适应行高和列宽
+    connect(table.tablemodel, &QSqlTableModel::dataChanged,this, &qMainWindow::ModelDataChanged_slot);
+    connect(this, &qMainWindow::signal_ModelChanged,table.tableview, &QTableView::resizeRowsToContents);
+    connect(this, &qMainWindow::signal_ModelChanged,table.tableview, &QTableView::resizeColumnsToContents);
+
     _vTables.append(table);
 
     qDebug() << QString("表: %1,行数：%2,列数: %3").arg(tableName).arg(table.tablemodel->rowCount()).arg(columnCount);
@@ -179,6 +189,11 @@ void qMainWindow::query_slot()
             ++it;
         }
     }
+}
+
+void qMainWindow::ModelDataChanged_slot()
+{
+    emit signal_ModelChanged();
 }
 
 bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
