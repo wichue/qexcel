@@ -191,6 +191,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
         if(index < table.column - 1)
             cond += " or ";
     }
+    cond += "or rowid = 1";
     qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tablename:" << table.tablename <<",cond:"<<cond;
 
     table.tableview->setModel(table.tablemodel);
@@ -212,14 +213,22 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
         show_row = table.filter_row;
     }
 
-    table.filter_high = LABEL_HIGH + show_row * COLUMN_HIGH + 20; // 20冗余，滚动条会占用高度
-    if(show_row > 0)
+//    table.filter_high = LABEL_HIGH + show_row * COLUMN_HIGH + 20; // 20冗余，滚动条会占用高度
+    table.filter_high = LABEL_HIGH + 20;
+    if(show_row > 1)
     {
         table.label->setText(table.tablename);
         table.label->move(10,view_high);
         table.label->show();
 
         table.tableview->resizeColumnsToContents();
+        table.tableview->resizeRowsToContents();
+
+        for(int index=0;index<show_row;index++)
+        {
+            table.filter_high += table.tableview->rowHeight(index);
+        }
+
         table.tableview->show();
         table.tableview->move(10,view_high + LABEL_HIGH);
 //        table.tableview->resize(this->width() - 20,table.filter_high - LABEL_HIGH);
