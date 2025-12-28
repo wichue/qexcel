@@ -140,6 +140,33 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     qDebug() << QString("表: %1,行数：%2,列数: %3").arg(tableName).arg(table.tablemodel->rowCount()).arg(columnCount);
 }
 
+QStringList qMainWindow::getHeaderDataFromRowId(QString tablename,int rowid)
+{
+    QStringList headerTexts;
+    QSqlQuery query(_sqlite_db);
+    // 构造查询语句（查询指定 rowid 的行）
+    QString queryStr = QString("SELECT * FROM '%1' WHERE rowid = %2").arg(tablename).arg(rowid);
+
+    if (query.exec(queryStr)) {
+        // 移动到查询结果的第一条
+        if (query.next()) {
+            // 遍历所有列，获取每列的文本
+            QSqlRecord record = query.record();
+            for (int col = 0; col < record.count(); ++col) {
+                QVariant value = query.value(col);
+                // 处理空值，避免表头显示空字符串
+                headerTexts.append(value.isNull() ? "" : value.toString());
+            }
+        } else {
+            qWarning() << "未找到 rowid=" << rowid << " 的数据";
+        }
+    } else {
+        qCritical() << "查询表头数据失败：" << query.lastError().text();
+    }
+
+    return headerTexts;
+}
+
 void qMainWindow::checkbox_changed_slot()
 {
     switch(ui->checkBox_edit->checkState())
@@ -206,7 +233,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
         if(index < table.column - 1)
             cond += " or ";
     }
-    cond += "or rowid = 1";
+//    cond += "or rowid = 1";// 查询第一条记录
     qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tablename:" << table.tablename <<",cond:"<<cond;
 
     table.tableview->setModel(table.tablemodel);
@@ -217,6 +244,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
         return false;
     }
     table.filter_row = table.tablemodel->rowCount();
+    table.filter_clm = table.tablemodel->columnCount();
 
     int show_row = 0;
     if(table.filter_row >= MAX_SHOW_ROW)
@@ -230,8 +258,19 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
 
 //    table.filter_high = LABEL_HIGH + show_row * COLUMN_HIGH + 20; // 20冗余，滚动条会占用高度
     table.filter_high = LABEL_HIGH + 20;
-    if(show_row > 1)
+    if(show_row > 0)
     {
+        //查询数据库第一行作为表头
+        QStringList headerTexts = getHeaderDataFromRowId(table.tablename,1);
+        if (!headerTexts.isEmpty()) {
+            // 设置水平表头
+            int xies = std::min(table.filter_clm,headerTexts.size());
+            for (int col = 0; col < xies; ++col)
+            {
+                table.tablemodel->setHeaderData(col, Qt::Horizontal, headerTexts.at(col), Qt::DisplayRole);
+            }
+        }
+
         table.label->setText(table.tablename);
         table.label->move(10,view_high);
         table.label->show();
@@ -243,6 +282,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
         {
             table.filter_high += table.tableview->rowHeight(index);
         }
+        table.filter_high += table.tableview->horizontalHeader()->height();
 
         table.tableview->show();
         table.tableview->move(10,view_high + LABEL_HIGH);

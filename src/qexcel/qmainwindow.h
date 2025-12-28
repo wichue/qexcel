@@ -27,6 +27,7 @@ struct DB_Table {
     QLabel *label;
 
     int filter_row; //当前过滤后的行数
+    int filter_clm; //当前过滤后的列数
     int filter_high; //当前过滤后显示区的高度,包含标签和表格
 };
 
@@ -51,6 +52,7 @@ private:
     void copyData(QTableView *view);
 
     void addTable(QString tableName, int columnCount);
+    QStringList getHeaderDataFromRowId(QString tablename, int rowid);
 
 private:
     void paintEvent(QPaintEvent *);
