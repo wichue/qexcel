@@ -25,6 +25,7 @@ SOURCES += \
 
 HEADERS += \
     qmainwindow.h \
+    selfclass/ExcelTableView.h \
     selfclass/MultiLineDelegate.h
 
 FORMS += \

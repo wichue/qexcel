@@ -95,7 +95,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     table.label->hide();
     table.label->resize(300,LABEL_HIGH);
 
-    table.tableview = new QTableView;
+    table.tableview = new ExcelTableView;
 //    table.tableview->horizontalHeader()->setVisible(false);// 隐藏表头
     table.tableview->verticalHeader()->setDefaultSectionSize(COLUMN_HIGH);
     table.tableview->hide();
@@ -234,7 +234,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
             cond += " or ";
     }
 //    cond += "or rowid = 1";// 查询第一条记录
-    qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tablename:" << table.tablename <<",cond:"<<cond;
+//    qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tablename:" << table.tablename <<",cond:"<<cond;
 
     table.tableview->setModel(table.tablemodel);
     table.tablemodel->setFilter(cond);
@@ -277,6 +277,7 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
 
         table.tableview->resizeColumnsToContents();
         table.tableview->resizeRowsToContents();
+        table.tableview->horizontalHeader()->setStyleSheet("QHeaderView::section {background-color:rgb(187,220,255);}"); // 设置表头背景色
 
         for(int index=0;index<show_row;index++)
         {

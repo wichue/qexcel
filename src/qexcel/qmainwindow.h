@@ -10,6 +10,7 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 #include "selfclass/MultiLineDelegate.h"
+#include "selfclass/ExcelTableView.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class qMainWindow; }
@@ -21,7 +22,7 @@ struct DB_Table {
     int column; //列数
     QSqlTableModel *tablemodel;
     MultiLineDelegate *m_delegate; // 自定义多行委托
-    QTableView *tableview;
+    ExcelTableView *tableview;
     QAction *copyAct;
 
     QLabel *label;
