@@ -1,13 +1,24 @@
 #include "MultiLineDelegate.h"
-#include <QtSql>
+#include <QPlainTextEdit>
+#include <QScrollBar>
 
 // 创建多行编辑器（QPlainTextEdit）
 QWidget *MultiLineDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option,
                                          const QModelIndex &index) const
 {
     QPlainTextEdit *editor = new QPlainTextEdit(parent);
-    // 设置按编辑器宽度自动换行，避免横向滚动
+
+    // 设置按编辑器宽度自动换行
     editor->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+
+    // 关键：禁用滚动条
+    editor->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    editor->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+
+    // 可选：隐藏滚动条（双重保险）
+//    editor->verticalScrollBar()->hide();
+//    editor->horizontalScrollBar()->hide();
+
     return editor;
 }
 

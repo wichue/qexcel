@@ -12,11 +12,16 @@ ExcelTableView::ExcelTableView(QWidget *parent)
     connect(insertRowAct,&QAction::triggered,this,&ExcelTableView::insertRowAct_slot);
 }
 
+void ExcelTableView::setmodel(QSqlTableModel *tablemodel)
+{
+    m_tablemodel = tablemodel;
+}
+
 void ExcelTableView::setupUI()
 {
     // 基本设置
     setMouseTracking(true);
-    setSelectionBehavior(QAbstractItemView::SelectRows);
+//    setSelectionBehavior(QAbstractItemView::SelectRows);// 选中整行
     setSelectionMode(QAbstractItemView::SingleSelection);
 
     // 允许调整行高
@@ -27,7 +32,25 @@ void ExcelTableView::setupUI()
 
 void ExcelTableView::insertRowAct_slot()
 {
+    int row =0;
+    int column =0;
+    QModelIndexList indexes = selectionModel()->selectedIndexes();
+    //没有选中任何区域时，在最后一行下面插入行
+    if(indexes.size() == 0)
+    {
+        row = m_tablemodel->rowCount();
+        column = m_tablemodel->columnCount();
+    }
+    else
+    {
+        row = indexes.at(0).row();
+        column = indexes.at(0).column();
+    }
 
+    m_tablemodel->insertRow(row);
+//    m_tablemodel->submitAll();
+
+    qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"row"<<row<<"column"<<column;
 }
 
 bool ExcelTableView::eventFilter(QObject *watched, QEvent *event)
@@ -85,11 +108,11 @@ void ExcelTableView::mouseMoveEvent(QMouseEvent *event) {
 
 void ExcelTableView::mousePressEvent(QMouseEvent *event)
 {
-    qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"m_resizing"<<m_resizing;
+//    qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"m_resizing"<<m_resizing;
     if (event->button() == Qt::LeftButton && !m_resizing) {
         if(cursor() == Qt::SizeVerCursor)
         {
-            qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tiaozheng";
+//            qDebug()<<"["<<__FILE__<<"]"<<__LINE__<<__FUNCTION__<<"tiaozheng";
             m_resizing = true;
         }
     }

@@ -55,6 +55,7 @@ private:
     void addTable(QString tableName, int columnCount);
     QStringList getHeaderDataFromRowId(QString tablename, int rowid);
 
+    void ResizecomboBoxLen();
 private:
     void paintEvent(QPaintEvent *);
 private slots:
@@ -62,6 +63,7 @@ private slots:
     void checkbox_changed_slot();
     void query_slot();
     void ModelDataChanged_slot();
+    void comboBoxlistIdxChanged_slot(int index);
 signals:
     void signal_ModelChanged();
 

@@ -28,14 +28,10 @@ qMainWindow::qMainWindow(QWidget *parent)
     ui->setupUi(this);
     this->setWindowTitle("qexcel");
 
-    ui->btn_import->move(this->width() - ui->btn_import->width() - 10,10);
-    ui->checkBox_edit->move(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - 10,10);
-    ui->lineEdit_Query->resize(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - 30,ui->lineEdit_Query->height());
-
     _scroll_area = new QScrollArea(this);
     _layout = new QVBoxLayout(ui->widget);
     _scroll_area->move(0,50);
-
+    ui->comboBoxlist->addItem("所有表格");
     init_db();
 
     _scroll_area->setWidget(ui->widget);
@@ -50,6 +46,7 @@ qMainWindow::qMainWindow(QWidget *parent)
     connect(ui->btn_import,&QPushButton::clicked,this,&qMainWindow::btn_import_slot);
     connect(ui->lineEdit_Query,&QLineEdit::textChanged,this,&qMainWindow::query_slot);
     connect(ui->checkBox_edit,&QCheckBox::stateChanged,this,&qMainWindow::checkbox_changed_slot);
+    connect(ui->comboBoxlist,QOverload<int>::of(&QComboBox::currentIndexChanged),this,&qMainWindow::comboBoxlistIdxChanged_slot);
 }
 
 qMainWindow::~qMainWindow()
@@ -83,6 +80,7 @@ void qMainWindow::init_db()
     } else {
         qDebug() << "查询失败:" << query.lastError();
     }
+    ResizecomboBoxLen();
 }
 
 void qMainWindow::addTable(QString tableName, int columnCount)
@@ -94,6 +92,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     table.label = new QLabel;
     table.label->hide();
     table.label->resize(300,LABEL_HIGH);
+    table.label->setText(tableName);
 
     table.tableview = new ExcelTableView;
 //    table.tableview->horizontalHeader()->setVisible(false);// 隐藏表头
@@ -102,6 +101,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     table.tableview->setEditTriggers(QAbstractItemView::NoEditTriggers);
     table.tableview->setSelectionMode(QAbstractItemView::ContiguousSelection);
     table.tableview->setContextMenuPolicy(Qt::ActionsContextMenu);
+    table.tableview->horizontalHeader()->setStyleSheet("QHeaderView::section {background-color:rgb(187,220,255);}"); // 设置表头背景色
 
     table.copyAct = new QAction("复制",this);
     table.tableview->addAction(table.copyAct);
@@ -129,6 +129,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     table.m_delegate = new MultiLineDelegate;
     table.tableview->setItemDelegate(table.m_delegate);
     table.tablemodel->setEditStrategy(QSqlTableModel::OnFieldChange);// 单元格失焦后立即写入库
+    table.tableview->setmodel(table.tablemodel);
 
     // 内容改变时，单元格自适应行高和列宽
     connect(table.tablemodel, &QSqlTableModel::dataChanged,this, &qMainWindow::ModelDataChanged_slot);
@@ -136,6 +137,7 @@ void qMainWindow::addTable(QString tableName, int columnCount)
     connect(this, &qMainWindow::signal_ModelChanged,table.tableview, &QTableView::resizeColumnsToContents);
 
     _vTables.append(table);
+    ui->comboBoxlist->addItem(tableName);
 
     qDebug() << QString("表: %1,行数：%2,列数: %3").arg(tableName).arg(table.tablemodel->rowCount()).arg(columnCount);
 }
@@ -165,6 +167,21 @@ QStringList qMainWindow::getHeaderDataFromRowId(QString tablename,int rowid)
     }
 
     return headerTexts;
+}
+
+void qMainWindow::ResizecomboBoxLen()
+{
+    // 根据文本内容计算并设置最小宽度
+    QFontMetrics fm(ui->comboBoxlist->font());
+    int maxWidth = 0;
+
+    // 遍历所有项找到最长的文本宽度
+    for (int i = 0; i < ui->comboBoxlist->count(); ++i) {
+        int textWidth = fm.horizontalAdvance(ui->comboBoxlist->itemText(i));
+        maxWidth = qMax(maxWidth, textWidth);
+    }
+
+    ui->comboBoxlist->setMinimumWidth(maxWidth);
 }
 
 void qMainWindow::checkbox_changed_slot()
@@ -216,11 +233,51 @@ void qMainWindow::query_slot()
             ++it;
         }
     }
+    _layout->addStretch();
 }
 
 void qMainWindow::ModelDataChanged_slot()
 {
     emit signal_ModelChanged();
+}
+
+void qMainWindow::comboBoxlistIdxChanged_slot(int index)
+{
+    if(index > _vTables.size())
+        return;
+
+    for(int j=0;j<_vTables.size();j++)
+    {
+        _vTables[j].tableview->hide();
+        _vTables[j].label->hide();
+    }
+
+    if(index == 0)
+        return;
+
+    _vTables.at(index - 1).tableview->setModel(_vTables.at(index - 1).tablemodel);
+    _vTables.at(index - 1).tablemodel->setFilter("");
+    _vTables.at(index - 1).tablemodel->select();
+
+    _vTables.at(index - 1).label->move(10,VIEW_START_HIGH);
+    _vTables.at(index - 1).tableview->move(10,VIEW_START_HIGH + LABEL_HIGH);
+
+    _vTables.at(index - 1).tableview->resizeColumnsToContents();
+    _vTables.at(index - 1).tableview->resizeRowsToContents();
+
+    _vTables.at(index - 1).label->show();
+    _vTables.at(index - 1).tableview->show();
+
+    //TODO:先筛选，后选中表格时，不能自适应布局
+    if(_layout->count() > 16)
+    {
+//        QLayoutItem *item = _layout->takeAt(16);
+//        if (item && item->spacerItem()) {
+//            delete item;
+//            qDebug() << "已删除索引" << index << "的伸缩项";
+//        }
+        _vTables.at(index - 1).tableview->setFixedHeight(ui->widget->height());
+    }
 }
 
 bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
@@ -271,13 +328,11 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
             }
         }
 
-        table.label->setText(table.tablename);
         table.label->move(10,view_high);
         table.label->show();
 
         table.tableview->resizeColumnsToContents();
         table.tableview->resizeRowsToContents();
-        table.tableview->horizontalHeader()->setStyleSheet("QHeaderView::section {background-color:rgb(187,220,255);}"); // 设置表头背景色
 
         for(int index=0;index<show_row;index++)
         {
@@ -290,11 +345,9 @@ bool qMainWindow::query_table(DB_Table &table, QString line, int& view_high)
 //        table.tableview->resize(this->width() - 20,table.filter_high - LABEL_HIGH);
         table.tableview->setFixedHeight(table.filter_high - LABEL_HIGH);
 
+
         view_high += table.filter_high + 20;
     }
-
-    //在底部添加拉伸因子，使控件靠上
-    _layout->addStretch();
 
     return true;
 }
@@ -304,7 +357,8 @@ void qMainWindow::paintEvent(QPaintEvent *)
     _scroll_area->resize(this->width(),this->height() - 50);
     ui->btn_import->move(this->width() - ui->btn_import->width() - 10,10);
     ui->checkBox_edit->move(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - 10,10);
-    ui->lineEdit_Query->resize(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - 30,ui->lineEdit_Query->height());
+    ui->comboBoxlist->move(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - ui->comboBoxlist->width() - 20,10);
+    ui->lineEdit_Query->resize(this->width() - ui->btn_import->width() - ui->checkBox_edit->width() - ui->comboBoxlist->width() - 50,ui->lineEdit_Query->height());
 }
 
 // 导入表格

@@ -60,6 +60,16 @@
      <string>编辑</string>
     </property>
    </widget>
+   <widget class="QComboBox" name="comboBoxlist">
+    <property name="geometry">
+     <rect>
+      <x>750</x>
+      <y>10</y>
+      <width>111</width>
+      <height>30</height>
+     </rect>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
