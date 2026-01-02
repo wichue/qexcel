@@ -21,6 +21,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     main.cpp \
     qmainwindow.cpp \
+    selfclass/ExcelTableView.cpp \
     selfclass/MultiLineDelegate.cpp
 
 HEADERS += \
